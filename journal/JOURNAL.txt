@@ -1,0 +1,33 @@
+day one stuff
+
+so the project is about making a custom RP2350A dual-mode USB device with native eMMC storage. First thing i had to do was figure out the memry architecure cause the RP2350A actually needs external flash to run firmware. i looked at option A which was using just one QSPI flash for everything but i rejected it.
+      Option B was a split architecure where QSPI flash is for firmware and eMMC is for mass storage, and i picked this cause its a professional pattern where firmware stays isolated. Then i had to plan the voltage domains which was super critical.
+  The core is 1.1V and eMMC uses 3.3V for VCC and 1.8V for VCCQ in high speed mode. This meant i needed a separate 1.8V LDO and careful routing. If I accidentaly connected 3.3V to the 1.8V flash IOVDD it would permantly destroy the flash. ChatGPT helped me validate this huge risk.
+        For the USB interface i chose USB-C for modern compatiblity and it needs 5.1kΩ pull-down resistors on CC1 and CC2. ChatGPT confirmed i need independent CC resistors and def shouldn't short them together. A critical realiztion was that the RP2350A does NOT have an SDMMC peripherel.
+That means i gotta implement the MMC protocol via PIO and use a 4-bit data bus and handle the initialization sequence. This totally changed the project from just hardware into hardware and low-level firmware engineering. For power i chose AP2112K LDOs for 3.3V and 1.8V cause they have low noise and are simple to implement.
+
+day to: scematics
+
+Moving on to schematic design, the RP2350 internal SMPS needed an external inductor. Originally I picked a 10µH inductor but it got flagged later that the recommended value is lower. If the inductor is too large it causes poor transient response and instability. So yeah, that got corrected.
+   My decoupling stratgy was putting a 0.1µF local capacitor and a 4.7µF bulk capacitor to minimize ground bounce and voltage droop. I made sure the QSPI flash IOVDD was only tied to 1.8V. For the eMMC wiring i connected CMD, CLK, and DAT0-DAT3 and added pull-ups because MMC requires a defined bus state.
+         ChatGPT confirmed my bus termination approach was right. For USB protection I added TPD4E05 ESD protection and made a critical note to not create stubs before the ESD. I also designed a boot mode button with a 10k pull-up to 3.3V connected to GPIO22. Even though internal pull-ups exist, a hardware pull-up is way safer for a stable boot mode. This basically ensures deterministic boot selection at reset.
+
+third day pcb
+
+      For the layer stack I chose a 4-layer setup. This gives better return path control and stable USB routing. The SMPS loop area was minimized between the inductor, switching node, and output capacitor to reduce EMI.
+  I placed the decoupling capacitors as close as physicaly possible with a direct via to the ground plane.
+
+forth day encosure & firmware
+
+I designed a 3D enclosure with a USB-C cutout and button clearance cause mechanical integration really affects usability and durability. Then I planned out a layered firmware model that goes from TinyUSB to MSC to Block Device to MMC Protocol to PIO Transport.
+      Making it layered makes it way easier for debugging and maintainability. The eMMC initialization sequence requires a bunch of commands like CMD0, CMD1, CMD2, CMD3, CMD7, and CMD6 plus CRC calculations.
+  Just to b clear, ChatGPT was used as a technical review assistant but it did NOT auto-generate the final PCB or perform independent design decisions. All the engineering decisions were totally made by me.
+            Overall this project expanded my understanding of multi-rail embedded power systems and native MMC protocol. The final status is a complete schematic, complete PCB layout, and complete enclosure design ready for fabrication.
+
+exact parts i used for the build
+
+    so to b super specific about the hardware, here is the exact parts i slaped on the board. the main brain is obviously the RP2350A-QFN60. for the usb connector i went with UP31-CV-G-CM and protected the data lines using the TPD4E05U06DQAR esd chip.
+   I also used a TS3USB221RSERG4 usb switch in there. for the main mass storage eMMC i used the MTFC16GAKAEDQ-AIT. but wait there is actually a different storage for HID scripts which is the MT25QUxxxxxx1xW7 QSPI flash.
+        to activate that HID mode on the different storage I put in a EVQ-P7A01P tactile button so you can switch it up. for the power stuff I used AP2112K-3.3TRG1 and AP2112K-1.8TRG1 LDOs. Oh and that 10µH inductor I mentioned on day 2 that was maybe too big? the part number for that one was LQH2MPN100MGRL.
+
+            Overall this project expanded my understanding of multi-rail embedded power systems and native MMC protocol. The final status is a complete schematic, complete PCB layout, and complete enclosure design ready for fabrication.

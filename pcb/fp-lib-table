@@ -1,0 +1,5 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "footprints")(type "KiCad")(uri "E:/StealthDucky/footprints")(options "")(descr ""))
+  (lib (name "usb-c")(type "KiCad")(uri "E:/StealthDucky/.pretty/usb-c.pretty")(options "")(descr ""))
+)
