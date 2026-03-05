@@ -3,7 +3,7 @@
 
 ## 1. Description
 
-This project is a custom USB storage and control device powerd by the **Raspberry Pi RP2350A** microcontroller. It serves as a dualmode device separating system firmware from user data through a highspeed EMMC interface
+This project is a custom USB storage and control device powered by the **Raspberry Pi RP2350A** microcontroller. It serves as a dualmode device separating system firmware from user data through a high-speed eMMC interface
 
 The system architecture utilizes a 4-layer PCB to maintain signal integrity for high-speed digital lines (USB and eMMC).
 
